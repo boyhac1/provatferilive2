@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provat Feri Live - Watch Live TV</title>
+    
+    <!-- Custom Fonts (Poppins) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome (for Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root { --primary-color: #e50914; --background-color: #141414; --card-background: #1d1d1d; --text-color: #ffffff; --text-muted: #a0a0a0; --font-family: 'Poppins', sans-serif; --border-radius: 8px; --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; height: 100%; }
+        body { font-family: var(--font-family); background-color: var(--background-color); color: var(--text-color); overflow-x: hidden; min-height: 100%; display: flex; flex-direction: column; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--card-background); }
+        ::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 10px; }
+
+        .loader-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--background-color); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10001; transition: opacity 0.7s ease, visibility 0.7s ease; }
+        .loader-container.hidden { opacity: 0; visibility: hidden; }
+        .spinner { border: 5px solid rgba(255, 255, 255, 0.2); border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        #page-login { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=2070') no-repeat center center/cover; z-index: 10000; transition: opacity 0.5s ease-out, visibility 0.5s ease-out; }
+        #page-login.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .login-box { background: rgba(29, 29, 29, 0.85); padding: 40px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); width: 90%; max-width: 400px; text-align: center; backdrop-filter: blur(10px); }
+        .login-box h2 { margin-bottom: 10px; font-size: 2.5rem; font-weight: 700; }
+        .login-box h2 span { color: var(--primary-color); }
+        .input-group { position: relative; margin-bottom: 25px; }
+        .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .input-group input { width: 100%; padding: 15px 15px 15px 45px; background: var(--background-color); border: 1px solid #333; border-radius: var(--border-radius); color: var(--text-color); font-size: 1rem; }
+        .login-btn { width: 100%; padding: 15px; background: var(--primary-color); color: var(--text-color); border: none; border-radius: var(--border-radius); font-size: 1.1rem; font-weight: 600; cursor: pointer; }
+        .error-message { color: #ff4d4d; margin-top: 15px; min-height: 20px; font-weight: 500; }
+
+        #admin-popup { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) scale(0.8); background-color: #28a745; color: white; padding: 15px 30px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); z-index: 10001; opacity: 0; visibility: hidden; transition: transform 0.4s ease, opacity 0.4s ease; }
+        #admin-popup.show { transform: translateX(-50%) scale(1); opacity: 1; visibility: visible; }
+        
+        #main-content { display: none; flex-direction: column; flex-grow: 1; width: 100%; opacity: 0; transition: opacity 0.5s ease-in-out; }
+        #main-content.visible { display: flex; opacity: 1; }
+
+        header { background: var(--card-background); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); }
+        .logo { font-size: 1.8rem; font-weight: 700; cursor: pointer; }
+        .logo span { color: var(--primary-color); }
+        header nav { display: flex; gap: 25px; align-items: center; }
+        .nav-link { color: var(--text-muted); text-decoration: none; font-weight: 500; transition: color 0.3s; position: relative; padding: 5px 0; cursor: pointer; }
+        .nav-link i { margin-right: 8px; }
+        .nav-link::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background-color: var(--primary-color); transition: width 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--text-color); }
+        .nav-link.active::after { width: 100%; }
+
+        main { padding: 40px 5%; flex-grow: 1; }
+        .page { display: none; animation: fadeIn 0.5s ease-in-out; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .section-title { font-size: 2rem; font-weight: 600; margin-bottom: 30px; border-left: 4px solid var(--primary-color); padding-left: 15px; }
+        
+        .hero-section { text-align: center; padding: 60px 20px; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1974') no-repeat center center/cover; border-radius: var(--border-radius); margin-bottom: 40px; }
+        .hero-section h1 { font-size: 3rem; }
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .category-card { background: var(--card-background); padding: 30px; border-radius: var(--border-radius); text-align: center; cursor: pointer; transition: transform 0.3s, border-color 0.3s; border: 1px solid #333; }
+        .category-card:hover { transform: translateY(-10px); border-color: var(--primary-color); }
+        .category-card i { font-size: 3rem; color: var(--primary-color); margin-bottom: 15px; }
+
+        .filter-container { margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 10px; }
+        .filter-btn { padding: 10px 20px; border: 1px solid var(--primary-color); background: transparent; color: var(--text-color); border-radius: var(--border-radius); cursor: pointer; transition: background-color 0.3s; }
+        .filter-btn.active, .filter-btn:hover { background: var(--primary-color); }
+        .channel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; }
+        .channel-card { background: var(--card-background); border-radius: var(--border-radius); overflow: hidden; cursor: pointer; transition: transform 0.3s; position: relative; display: none; }
+        .channel-card.visible { display: block; animation: popIn 0.5s ease-out forwards; opacity: 0; }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        .channel-card-thumbnail { width: 100%; height: 150px; object-fit: cover; background-color: #333; }
+        .channel-card-info { padding: 15px; }
+
+        .back-btn { background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: var(--border-radius); cursor: pointer; font-size: 1rem; margin-bottom: 20px; }
+        .video-wrapper { position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: var(--border-radius); overflow: hidden; }
+        .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .suggestions-container { margin-top: 40px; }
+        .suggestions-container .channel-grid.small { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+        
+        footer { text-align: center; padding: 20px; border-top: 1px solid #333; color: var(--text-muted); }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .shake-animation { animation: shake 0.3s linear; }
+
+        .menu-toggle { display: none; font-size: 1.5rem; cursor: pointer; }
+        @media (max-width: 768px) {
+            .menu-toggle { display: block; }
+            header nav { position: absolute; top: 100%; right: 0; width: 250px; background: var(--card-background); flex-direction: column; align-items: flex-start; gap: 0; max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; padding: 0 20px; border-bottom-left-radius: var(--border-radius); box-shadow: -5px 5px 15px rgba(0,0,0,0.3); }
+            header nav.active { max-height: 500px; padding: 20px; }
+            .nav-link { width: 100%; text-align: left; padding: 15px 0; }
+            .section-title, .hero-section h1 { font-size: 1.5rem; }
+            .channel-grid, .category-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loader" class="loader-container"><div class="spinner"></div></div>
+    <div id="admin-popup"><i class="fas fa-check-circle"></i> Admin login successfully</div>
+    <section id="page-login">
+        <div class="login-box">
+            <h2>Provat Feri <span>Live</span></h2><p class="login-subtitle">Enter credentials to continue</p>
+            <form id="login-form">
+                <div class="input-group"><i class="fas fa-user"></i><input type="text" id="username" placeholder="User ID" required></div>
+                <div class="input-group"><i class="fas fa-lock"></i><input type="password" id="password" placeholder="Password" required></div>
+                <button type="submit" class="login-btn">Login <i class="fas fa-arrow-right"></i></button><p id="login-error" class="error-message"></p>
+            </form>
+        </div>
+    </section>
+    <div id="main-content">
+        <header>
+            <div class="logo" id="logo-btn">Provat Feri <span>Live</span></div>
+            <nav>
+                <a class="nav-link" data-page="page-home"><i class="fas fa-home"></i> Home</a>
+                <a class="nav-link" data-page="page-live-tv"><i class="fas fa-tv"></i> Live TV</a>
+                <a id="logout-btn" class="nav-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </nav>
+            <div class="menu-toggle" id="menu-toggle"><i class="fas fa-bars"></i></div>
+        </header>
+        <main>
+            <section id="page-home" class="page">
+                <div class="hero-section"><h1>Watch Your Favorite Channels Live</h1><p>Entertainment, News, Sports, and more, all in one place.</p></div>
+                <h2 class="section-title">Categories</h2>
+                <div class="category-grid">
+                    <div class="category-card" data-page="page-live-tv"><i class="fas fa-tv"></i><h3>Live TV</h3></div>
+                    <div class="category-card" data-page-alert="Movies category is coming soon!"><i class="fas fa-film"></i><h3>Movies</h3></div>
+                    <div class="category-card" data-page-alert="Sports category is coming soon!"><i class="fas fa-futbol"></i><h3>Sports</h3></div>
+                </div>
+            </section>
+            <section id="page-live-tv" class="page">
+                <h2 class="section-title">Live TV Channels</h2>
+                <div class="filter-container" id="filter-container"></div>
+                <div id="channel-grid" class="channel-grid"></div>
+            </section>
+            <section id="page-player" class="page">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i> Back</button>
+                <h2 id="player-title" class="section-title"></h2>
+                <div class="player-container"><div class="video-wrapper"><iframe id="video-player-iframe" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div></div>
+                <div class="suggestions-container"><h3 class="section-title">Suggestions</h3><div id="suggestion-grid" class="channel-grid small"></div></div>
+            </section>
+        </main>
+        <footer><p>Copyright © <span id="year"></span> Provat Feri Live. Developed by Sajid.</p></footer>
+    </div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const elements = {
+            loader: document.getElementById('loader'), loginPage: document.getElementById('page-login'), adminPopup: document.getElementById('admin-popup'), mainContent: document.getElementById('main-content'), loginForm: document.getElementById('login-form'), allPages: document.querySelectorAll('#main-content .page'), navLinks: document.querySelectorAll('.nav-link'), categoryCards: document.querySelectorAll('.category-card'), menuToggle: document.getElementById('menu-toggle'), nav: document.querySelector('header nav'), channelGrid: document.getElementById('channel-grid'), filterContainer: document.getElementById('filter-container'), playerIframe: document.getElementById('video-player-iframe'), playerTitle: document.getElementById('player-title'), suggestionGrid: document.getElementById('suggestion-grid'), backBtn: document.querySelector('.back-btn'), logoutBtn: document.getElementById('logout-btn'), logoBtn: document.getElementById('logo-btn'), yearSpan: document.getElementById('year'),
+        };
+
+        const USERS = [
+            { user: 'provatferi.live', pass: 'md5010475', role: 'user' }, { user: 'sajidadmin99', pass: 'khoradi@admin1', role: 'admin' }, { user: 'gift@sajid', pass: 'md5010', role: 'user' }, { user: 'gift2@sajid', pass: 'mdsk2090', role: 'user' },
+        ];
+
+        const CHANNELS = [
+            { id: 'r6GtJWbbIYo', name: 'SOMOY TV', category: 'BD News' }, { id: 'yDzvLqfQhyM', name: 'Jamuna TV', category: 'BD News' }, { id: 'wuUhC6jfqrY', name: 'Independent TV', category: 'BD News' }, { id: 'noZ-ii43Q74', name: 'Channel 24', category: 'BD News' }, { id: 'Bfmh7w0JzAE', name: 'Ekattor TV', category: 'BD News' }, { id: 'Eqg2eJorQvk', name: 'NTV', category: 'BD News' }, { id: 'mVjVJmNzV60', name: 'ATN News', category: 'BD News' }, { id: 'v3f4F4qbeNw', name: 'Channel i', category: 'BD News' }, { id: 'XtYRatCkUdg', name: 'NEWS24', category: 'BD News' }, { id: 'XUAIgekl89k', name: 'Rtv News', category: 'BD News' }, { id: 'CAOaoRtQm_I', name: 'EKHON TV', category: 'BD News' }, { id: 'A7wWbGru15I', name: 'DBC NEWS', category: 'BD News' }, { id: 'iipR5yUp36o', name: 'ABC NEWS', category: 'International' }, { id: 'gCNeDWCI0vo', name: 'Al Jazeera English', category: 'International' }, { id: 'Ap-UM1O9RBU', name: 'FRANCE 24 English', category: 'International' }, { id: 'pykpO5kQJ98', name: 'euronews', category: 'International' }, { id: 'YDvsBbKfLPA', name: 'Sky News', category: 'International' }, { id: 'LuKwFajn37U', name: 'DW News', category: 'International' }, { id: 'MiJIODpKngw', name: 'talkSPORT', category: 'Sports' }, { id: 'DIgkvm2nmHc', name: 'NASA', category: 'Space' }, { id: 'jA0O59m9OTA', name: 'Dream Trips', category: 'Space' }, { id: 'fO9e9jnhYK8', name: 'Sen', category: 'Space' }, { id: 'Vr2dKsLBHQo', name: 'Love Nature', category: 'Nature' }, { id: 'TFCqm6nMSlY', name: 'National Geographic', category: 'Nature' }, { id: 'KxgnK2W2-Ko', name: '8K Scenic Relaxation', category: 'Nature' }, { id: 'LCGYWfbyBWc', name: 'FOBBV CAM', category: 'Nature' },
+        ];
+        
+        const showPage = (pageId) => {
+            elements.allPages.forEach(page => page.classList.toggle('active', page.id === pageId));
+            elements.navLinks.forEach(link => link.classList.toggle('active', link.dataset.page === pageId));
+            window.scrollTo(0, 0);
+        };
+
+        const handleLogin = (event) => {
+            event.preventDefault();
+            const userIn = document.getElementById('username').value.trim();
+            const passIn = document.getElementById('password').value.trim();
+            const foundUser = USERS.find(u => u.user === userIn && u.pass === passIn);
+
+            if (foundUser) {
+                document.getElementById('login-error').textContent = '';
+                elements.loginPage.classList.add('hidden');
+                
+                if (foundUser.role === 'admin') {
+                    elements.adminPopup.classList.add('show');
+                    setTimeout(() => elements.adminPopup.classList.remove('show'), 3000);
+                }
+                
+                setTimeout(() => {
+                    elements.mainContent.classList.add('visible');
+                    showPage('page-home');
+                }, 500);
+            } else {
+                document.getElementById('login-error').textContent = 'Invalid User ID or Password.';
+                elements.loginForm.classList.add('shake-animation');
+                setTimeout(() => elements.loginForm.classList.remove('shake-animation'), 500);
+            }
+        };
+
+        const handleLogout = () => {
+            elements.mainContent.classList.remove('visible');
+            setTimeout(() => {
+                elements.loginPage.classList.remove('hidden');
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+            }, 500);
+        };
+        
+        const createChannelCard = (channel) => {
+            const card = document.createElement('div');
+            card.className = 'channel-card';
+            card.innerHTML = `<img src="https://i.ytimg.com/vi/${channel.id}/hqdefault.jpg" alt="${channel.name}" class="channel-card-thumbnail" loading="lazy"><div class="channel-card-info"><h3>${channel.name}</h3></div>`;
+            card.addEventListener('click', () => openPlayer(channel));
+            return card;
+        };
+        
+        const renderChannels = (filter = 'All') => {
+            elements.channelGrid.innerHTML = '';
+            const filtered = filter === 'All' ? CHANNELS : CHANNELS.filter(c => c.category === filter);
+            filtered.forEach((channel, index) => {
+                const card = createChannelCard(channel);
+                elements.channelGrid.appendChild(card);
+                setTimeout(() => card.classList.add('visible'), index * 50);
+            });
+        };
+        
+        const setupFilterButtons = () => {
+            const categories = ['All', ...new Set(CHANNELS.map(c => c.category))];
+            elements.filterContainer.innerHTML = '';
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `filter-btn ${cat === 'All' ? 'active' : ''}`;
+                btn.textContent = cat;
+                btn.addEventListener('click', () => {
+                    document.querySelector('.filter-btn.active').classList.remove('active');
+                    btn.classList.add('active');
+                    renderChannels(cat);
+                });
+                elements.filterContainer.appendChild(btn);
+            });
+        };
+
+        const openPlayer = (channel) => {
+            elements.playerTitle.textContent = channel.name;
+            elements.playerIframe.src = `https://www.youtube.com/embed/${channel.id}?autoplay=1&rel=0`;
+            
+            const suggestions = [...CHANNELS].sort(() => 0.5 - Math.random()).filter(c => c.id !== channel.id).slice(0, 6);
+            elements.suggestionGrid.innerHTML = '';
+            suggestions.forEach(s => {
+                const card = createChannelCard(s);
+                card.classList.add('visible');
+                elements.suggestionGrid.appendChild(card);
+            });
+            showPage('page-player');
+        };
+
+        // --- Initial Setup & Event Listeners ---
+        setTimeout(() => elements.loader.classList.add('hidden'), 1000);
+        elements.yearSpan.textContent = new Date().getFullYear();
+        elements.loginForm.addEventListener('submit', handleLogin);
+        elements.logoutBtn.addEventListener('click', handleLogout);
+        elements.logoBtn.addEventListener('click', () => showPage('page-home'));
+        elements.backBtn.addEventListener('click', () => { showPage('page-live-tv'); elements.playerIframe.src = ''; });
+        elements.menuToggle.addEventListener('click', () => elements.nav.classList.toggle('active'));
+
+        elements.navLinks.forEach(link => {
+            if (link.dataset.page) {
+                link.addEventListener('click', () => { showPage(link.dataset.page); elements.nav.classList.remove('active'); });
+            }
+        });
+        
+        elements.categoryCards.forEach(card => {
+            if (card.dataset.page) {
+                card.addEventListener('click', () => showPage(card.dataset.page));
+            } else if (card.dataset.pageAlert) {
+                card.addEventListener('click', () => alert(card.dataset.pageAlert));
+            }
+        });
+        
+        setupFilterButtons();
+        renderChannels();
+        showPage('page-home');
+    });
+    </script>
+</body>
+</html>
